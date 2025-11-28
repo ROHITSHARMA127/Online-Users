@@ -12,6 +12,10 @@ app.get("/api/user",async(request, response)=>{
 
 });
 
+
+// register api
+
+
 app.post("/api/user/register", async (request, response) => {
     const name = request.body.name;
     const email = request.body.email;
@@ -38,7 +42,9 @@ app.post("/api/user/register", async (request, response) => {
         });
     }
 });
-// password
+
+
+// login api 
 app.post("/api/user/login", async (request, response) => {
     const email = request.body.email;
     const password = request.body.password;
@@ -72,6 +78,55 @@ app.post("/api/user/login", async (request, response) => {
         });
     }
 });
+
+
+
+// update 
+app.put("/api/user/update/:id",(request,response)=>{
+    const name = request.body.name;
+    const email = request.body.email;
+    const id = request.params.id;
+
+    db.query("UPDATE users SET name=? , email=? WHERE id=?",[name,email,id],(error,result)=>{
+         if(error){
+            return response.status(500).json({massage: "Server internal error"+error});
+        }
+                    // If ID not found
+            if (result.affectedRows === 0) {
+                return response.status(404).json({ message: "User not found" });
+            }
+        else {
+            return response.status(200).json({message: "Data updated succesfully",name:name, email:email});
+        }
+    });
+});
+
+
+
+//delete......
+app.delete("/api/user/delete/:id", (request, response) => {
+  const id = request.params.id;
+
+  db.query("DELETE FROM users WHERE id = ?", [id], (error, result) => {
+    if (error) {
+      return response.status(500).json({ message: "Server internal error: " + error });
+    }
+
+    // Check if record actually deleted
+    if (result.affectedRows === 0) {
+      return response.status(404).json({ message: "User not found" });
+    }
+
+    else{
+       return response.status(200).json({ message: "User deleted successfully" });
+    }
+  });
+});
+
+
+
+
+
 
 app.listen(4003, (error)=>{
     if(error) console.log("Error "+ error);
