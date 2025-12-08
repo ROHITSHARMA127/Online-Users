@@ -81,47 +81,63 @@ app.post("/api/user/login", async (request, response) => {
 
 
 
-// update 
-app.put("/api/user/update/:id",(request,response)=>{
-    const name = request.body.name;
-    const email = request.body.email;
+
+
+// GET PROFILE
+app.get("/api/user/profile/:id", async (request, response) => {
     const id = request.params.id;
 
-    db.query("UPDATE users SET name=? , email=? WHERE id=?",[name,email,id],(error,result)=>{
-         if(error){
-            return response.status(500).json({massage: "Server internal error"+error});
+    try {
+        const [rows] = await db.query(
+            "SELECT id, name, email FROM users WHERE id = ?",
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return response.status(404).json({ message: "User not found" });
         }
-                    // If ID not found
-            if (result.affectedRows === 0) {
-                return response.status(404).json({ message: "User not found" });
-            }
-        else {
-            return response.status(200).json({message: "Data updated succesfully",name:name, email:email});
+
+        response.status(200).json({
+            status: "success",
+            user: rows[0]
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: "Server error: " + error
+        });
+    }
+});
+
+// UPDATE PROFILE
+app.put("/api/user/profile/:id", async (request, response) => {
+    const id = request.params.id;
+    const { name, email } = request.body;
+
+    try {
+        const [result] = await db.query(
+            "UPDATE users SET name = ?, email = ? WHERE id = ?",
+            [name, email, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return response.status(404).json({ message: "User not found" });
         }
-    });
+
+        response.status(200).json({
+            status: "success",
+            message: "Profile updated successfully"
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: "Server error: " + error
+        });
+    }
 });
 
 
 
-//delete......
-app.delete("/api/user/delete/:id", (request, response) => {
-  const id = request.params.id;
-
-  db.query("DELETE FROM users WHERE id = ?", [id], (error, result) => {
-    if (error) {
-      return response.status(500).json({ message: "Server internal error: " + error });
-    }
-
-    // Check if record actually deleted
-    if (result.affectedRows === 0) {
-      return response.status(404).json({ message: "User not found" });
-    }
-
-    else{
-       return response.status(200).json({ message: "User deleted successfully" });
-    }
-  });
-});
 
 
 
