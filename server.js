@@ -19,12 +19,13 @@ app.get("/api/user",async(request, response)=>{
 app.post("/api/user/register", async (request, response) => {
     const name = request.body.name;
     const email = request.body.email;
-    const password = request.body.password;
-    
-    const passwordHash = await bcrypt.hash(password, 10); 
+    const password = request.body.password;  // <-- no hashing
     
     try {
-        const [result] = await db.query( "INSERT INTO users(name, email, password) VALUES (? , ?, ?)",[name, email, passwordHash]);
+        const [result] = await db.query(
+            "INSERT INTO users(name, email, password) VALUES (?, ?, ?)",
+            [name, email, password]   // <-- plain password
+        );
 
         response.status(201).json({ 
             id: result.insertId, 
@@ -44,40 +45,57 @@ app.post("/api/user/register", async (request, response) => {
 });
 
 
+
 // login api 
 app.post("/api/user/login", async (request, response) => {
     const email = request.body.email;
-    const password = request.body.password;
+    const password = request.body.password;     // plain password
     const secretKey = "ghdfjjgi9ew8865w"; 
 
     try {
-        const [result] = await db.query("SELECT name, email, password FROM users WHERE email=?", [email],);
+        // get user by email
+        const [result] = await db.query(
+            "SELECT id, name, email, password FROM users WHERE email = ?",
+            [email]
+        );
+
+        // if email not found
         if (result.length === 0) {
             return response.status(401).json({ message: "Login failed: Invalid email or password." });
         }
 
         const user = result[0];
-        const dbPassword = user.password;
-        const isPasswordSame = await bcrypt.compare(password, dbPassword);
-        
-        if (isPasswordSame) {
-            const token = jwt.sign({ name: user.name, email: user.email }, secretKey, { expiresIn: "1h" }); 
-            
-            response.status(200).json({ 
-                message: "Login successfully", 
-                token: token
-            });
-        } else {
-            response.status(401).json({ message: "Login failed: Invalid email or password." });
+
+        // plain password compare
+        if (password !== user.password) {
+            return response.status(401).json({ message: "Login failed: Invalid email or password." });
         }
+
+        // create jwt token
+        const token = jwt.sign(
+            { id: user.id, name: user.name, email: user.email },
+            secretKey,
+            { expiresIn: "1h" }
+        );
+
+        response.status(200).json({
+            message: "Login successfully",
+            token: token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email
+            }
+        });
 
     } catch (error) {
         console.error("Login attempt error:", error);
-        return response.status(500).json({ 
+        return response.status(500).json({
             message: "An internal server error occurred during login."
         });
     }
 });
+
 
 
 
