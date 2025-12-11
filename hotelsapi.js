@@ -37,6 +37,10 @@ app.get("/api/hotels/:id", (request, response) => {
   });
 });
 
+app.listen(4000, () => {
+   console.log("Server running...");
+});
+
 
 
 

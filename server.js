@@ -3,8 +3,10 @@ const db = require("./db");
 const app = express();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-//
+
 app.use(express.json());
+
+//get data
 
 app.get("/api/user",async(request, response)=>{
     const  result =await db.query("SELECT * FROM users")
